@@ -1,0 +1,24 @@
+# Restored with `npm ci` and `composer install`; the lock files are committed
+# so a build is reproducible.
+/node_modules/
+/vendor/
+
+# Source maps: large, and src/ is in the repo anyway
+/js/*.map
+
+# Local index, rebuildable
+/.codegraph/
+
+# Nextcloud desktop client artefacts
+.sync_*.db
+.sync_*.db-*
+*_conflict-*
+
+# Release archives
+/*.zip
+/*.tar.gz
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store

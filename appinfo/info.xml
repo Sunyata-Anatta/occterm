@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>occterm</id>
+    <name>OCCTerm</name>
+    <summary>Run occ commands from a web terminal, as an administrator</summary>
+    <description><![CDATA[
+Run Nextcloud's `occ` maintenance commands from a browser terminal, without shell
+access to the server.
+
+**This app executes occ as the web server user.** Anyone who can reach it can run
+any occ command, including ones that read and modify all user data. Enable it only
+when you need it.
+
+It cannot run interactive or long-running commands. PHP gives Nextcloud no native
+support for asynchronous operations, so a command that prompts will hang and a
+command such as `files:scan` on a large instance will time out partway.
+    ]]></description>
+    <version>1.0.0</version>
+    <licence>agpl</licence>
+    <author mail="AllV01d@users.noreply.github.com">AllV01d</author>
+    <namespace>OCCTerm</namespace>
+    <category>tools</category>
+    <category>monitoring</category>
+    <website>https://github.com/Sunyata-Anatta/occterm</website>
+    <bugs>https://github.com/Sunyata-Anatta/occterm/issues</bugs>
+    <repository type="git">https://github.com/Sunyata-Anatta/occterm.git</repository>
+    <dependencies>
+        <php min-version="8.1"/>
+        <nextcloud min-version="34" max-version="34"/>
+    </dependencies>
+    <navigations>
+        <navigation role="admin">
+            <id>occterm</id>
+            <name>OCCTerm</name>
+            <route>occterm.page.index</route>
+            <icon>app.svg</icon>
+            <type>link</type>
+        </navigation>
+    </navigations>
+</info>

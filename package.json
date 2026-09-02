@@ -1,0 +1,43 @@
+{
+  "name": "occterm",
+  "description": "Run occ commands from a web terminal, as an administrator",
+  "version": "1.0.0",
+  "license": "AGPL-3.0-or-later",
+  "private": true,
+  "scripts": {
+    "build": "webpack --node-env production --progress",
+    "dev": "webpack --node-env development --progress",
+    "watch": "webpack --node-env development --progress --watch",
+    "lint": "eslint src",
+    "stylelint": "stylelint src"
+  },
+  "dependencies": {
+    "@nextcloud/axios": "^2.6.0",
+    "@nextcloud/router": "^3.1.0",
+    "@nextcloud/vue": "^9.11.0",
+    "vue": "^3.5.42"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.9",
+    "@nextcloud/browserslist-config": "^3.1.2",
+    "@nextcloud/webpack-vue-config": "^7.0.4",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.1",
+    "minimizer-webpack-plugin": "^5.6.1",
+    "node-polyfill-webpack-plugin": "4.0.0",
+    "sass": "^1.64.2",
+    "sass-loader": "^17.0.0",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.4.4",
+    "vue-loader": "^17.4.2",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^6.0.0"
+  },
+  "engines": {
+    "node": "^20.11.0 || ^22 || ^24"
+  },
+  "browserslist": [
+    "extends @nextcloud/browserslist-config"
+  ]
+}
