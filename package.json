@@ -1,7 +1,7 @@
 {
   "name": "occterm",
   "description": "Run occ commands from a web terminal, as an administrator",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "AGPL-3.0-or-later",
   "private": true,
   "scripts": {

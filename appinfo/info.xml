@@ -16,7 +16,7 @@ It cannot run interactive or long-running commands. PHP gives Nextcloud no nativ
 support for asynchronous operations, so a command that prompts will hang and a
 command such as `files:scan` on a large instance will time out partway.
     ]]></description>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <licence>agpl</licence>
     <author mail="AllV01d@users.noreply.github.com">AllV01d</author>
     <namespace>OCCTerm</namespace>

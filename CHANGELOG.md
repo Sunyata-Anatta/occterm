@@ -2,6 +2,21 @@
 
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.1.1
+
+### Fixed
+
+- The typed command sat above the `occ $` prompt instead of on the same line.
+  Nextcloud styles every text input with a min-height, padding and a border
+  through rules more specific than a class, so the input grew taller than the
+  coloured layer drawn over it, and the two stopped agreeing on where the text
+  goes. The prompt is now one line tall and the input is forced into exactly
+  that box.
+
+  This only appeared on a real instance. The render used to check the interface
+  had no Nextcloud stylesheet, so it could not show the conflict; it now carries
+  a stand-in for those input rules.
+
 ## 1.1.0
 
 ### Added

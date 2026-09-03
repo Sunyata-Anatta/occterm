@@ -49,7 +49,7 @@ expects. Extract it directly into your apps directory, then enable it.
 ```bash
 cd /path/to/nextcloud/apps
 curl -L -o occterm.tar.gz \
-  https://github.com/Sunyata-Anatta/occterm/releases/download/v1.1.0/occterm-1.1.0.tar.gz
+  https://github.com/Sunyata-Anatta/occterm/releases/download/v1.1.1/occterm-1.1.1.tar.gz
 tar xzf occterm.tar.gz && rm occterm.tar.gz
 
 sudo -u www-data php /path/to/nextcloud/occ app:enable occterm

@@ -62,9 +62,9 @@
 								@keydown.esc="closeCandidates"
 								@keydown.up.prevent="onUp"
 								@keydown.down.prevent="onDown">
-
-							<NcLoadingIcon v-if="running" class="occterm__spinner" :size="20" />
 						</div>
+
+						<NcLoadingIcon v-if="running" class="occterm__spinner" :size="20" />
 					</div>
 				</div>
 			</div>
@@ -427,22 +427,21 @@ export default {
 	white-space: nowrap;
 }
 
+// One line tall, so the label beside it and the two layers inside it all agree.
 .occterm__field {
 	position: relative;
 	flex: 1;
-	display: flex;
-	align-items: center;
 	min-width: 0;
+	height: var(--occterm-line);
 }
 
-// Every property below is shared by the mirror and the input on purpose.
 .occterm__mirror,
 .occterm__input {
+	position: absolute;
+	inset: 0;
 	width: 100%;
-	margin: 0;
-	padding: 0;
-	border: none;
-	background: transparent;
+	height: 100%;
+	box-sizing: border-box;
 	font-family: var(--occterm-font);
 	font-size: var(--occterm-size);
 	line-height: var(--occterm-line);
@@ -450,50 +449,50 @@ export default {
 	white-space: pre;
 	overflow-x: auto;
 	scrollbar-width: none;
-}
-
-.occterm__mirror {
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	color: var(--occterm-plain);
 
 	&::-webkit-scrollbar {
 		display: none;
 	}
 }
 
-.occterm__input {
-	position: relative;
-	color: transparent;
+.occterm__mirror {
+	margin: 0;
+	padding: 0;
+	pointer-events: none;
+	color: var(--occterm-plain);
+}
+
+/**
+ * The input is forced rather than merely styled. Nextcloud gives every text
+ * input a min-height, padding and a border through rules more specific than a
+ * class, and any disagreement between this box and the mirror above shows up as
+ * the typed text sitting off the prompt line.
+ */
+.occterm__field input.occterm__input {
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	min-height: 0 !important;
+	height: 100% !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	outline: none !important;
+	font-family: var(--occterm-font) !important;
+	font-size: var(--occterm-size) !important;
+	line-height: var(--occterm-line) !important;
+	color: transparent !important;
 	caret-color: var(--occterm-plain);
-	outline: none;
 
 	&::placeholder {
 		color: #6e7681;
 	}
 
-	&:focus {
-		box-shadow: none;
-	}
-
 	// While an input method is composing, the pre-edit text exists only in the
 	// input, so it has to be readable there.
-	&--visible {
-		color: var(--occterm-plain);
+	&.occterm__input--visible {
+		color: var(--occterm-plain) !important;
 	}
-}
-
-.occterm__usage {
-	margin: 0 0 6px;
-	padding: 4px 8px;
-	background: #22222a;
-	border-radius: 6px;
-	color: #8b949e;
-	font-family: inherit;
-	font-size: 12px;
-	white-space: pre-wrap;
-	word-break: break-word;
 }
 
 .occterm__tok--command {
