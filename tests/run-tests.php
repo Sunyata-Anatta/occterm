@@ -113,17 +113,27 @@ check('run() returns the command transcript', function (): void {
 	that(str_contains($out, 'help'), "expected the built-in commands in:\n$out");
 });
 
-check('listCommands() parses Symfony JSON into sorted names', function (): void {
-	$names = makeRunner()->listCommands();
-	that($names !== [], 'expected at least the built-in commands');
-	that(in_array('list', $names, true), 'expected "list" among: ' . implode(',', $names));
-	that(in_array('help', $names, true), 'expected "help" among: ' . implode(',', $names));
+check('commandIndex() reports each command with its options and usage', function (): void {
+	$index = makeRunner()->commandIndex();
+	that(isset($index['commands'], $index['global']), 'expected both keys');
+	that(isset($index['commands']['list']), 'expected "list" among: ' . implode(',', array_keys($index['commands'])));
+	that(isset($index['commands']['list']['u']), 'each command needs a usage line');
+	that(str_contains($index['commands']['list']['u'], 'list'), 'usage should mention the command');
+	$names = array_keys($index['commands']);
 	$sorted = $names;
 	sort($sorted);
-	that($names === $sorted, 'names should come back sorted');
+	that($names === $sorted, 'commands should come back sorted');
 });
 
-check('listCommands() survives output that is not JSON', function (): void {
+check('options every command carries are reported once as global', function (): void {
+	$index = makeRunner()->commandIndex();
+	that(in_array('--help', $index['global'], true), 'expected --help global, got: ' . implode(',', $index['global']));
+	foreach ($index['commands'] as $name => $command) {
+		that(!in_array('--help', $command['o'], true), "$name should not repeat the global --help");
+	}
+});
+
+check('commandIndex() survives output that is not JSON', function (): void {
 	$runner = new class extends OccRunner {
 		public function __construct() {
 		}
@@ -131,7 +141,7 @@ check('listCommands() survives output that is not JSON', function (): void {
 			return "Something went wrong, not JSON at all";
 		}
 	};
-	that($runner->listCommands() === [], 'malformed output should yield an empty list, not a crash');
+	that($runner->commandIndex() === ['commands' => [], 'global' => []], 'malformed output should yield an empty index, not a crash');
 });
 
 echo "\n$passed passed, $failed failed\n";

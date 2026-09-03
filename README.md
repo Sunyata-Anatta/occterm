@@ -3,6 +3,37 @@
 Run Nextcloud's `occ` maintenance commands from a browser terminal, without shell
 access to the server.
 
+![The terminal, with a command being completed](docs/screenshot.png)
+
+## Using it
+
+Type a command and press Enter. The line is coloured as you type, so you can
+see what the app understood before you commit to it:
+
+| Colour | Meaning |
+|---|---|
+| cyan | a command occ recognises |
+| orange | an option that command accepts |
+| white | an argument or a value |
+| red, underlined | a name that matches nothing |
+
+Red only appears once a word can no longer become anything valid, so a
+half-typed `files:sc` stays neutral while `files:sq` is marked at once.
+
+**Tab** completes, and works the same way in both halves of the line: command
+names while you are typing the first word, that command's options afterwards.
+One match is inserted; several extend to their common prefix and open a list
+that narrows as you keep typing. Tab again steps through the list, Enter takes
+the highlighted entry, Esc closes it.
+
+Once a command is recognised, its usage line is shown above the prompt. That is
+occ's own summary, so it is the authoritative list of what the command accepts.
+
+**Up** and **Down** recall earlier commands. `clear` empties the transcript.
+
+Commands that can lock you out of the interface you are typing into, such as
+`maintenance:mode`, ask for confirmation first.
+
 ## Requirements
 
 - Nextcloud 34 (`info.xml` is pinned to `min-version="34" max-version="34"`)
@@ -18,7 +49,7 @@ expects. Extract it directly into your apps directory, then enable it.
 ```bash
 cd /path/to/nextcloud/apps
 curl -L -o occterm.tar.gz \
-  https://github.com/Sunyata-Anatta/occterm/releases/download/v1.0.0/occterm-1.0.0.tar.gz
+  https://github.com/Sunyata-Anatta/occterm/releases/download/v1.1.0/occterm-1.1.0.tar.gz
 tar xzf occterm.tar.gz && rm occterm.tar.gz
 
 sudo -u www-data php /path/to/nextcloud/occ app:enable occterm
@@ -117,13 +148,22 @@ expected signature is recorded in `tests/stubs/nextcloud.php`.
 
 ```
 composer install     # dev-only, for the tests
-composer test        # 8 checks, no PHPUnit and no Nextcloud needed
+composer test        # 9 checks: the runner and the command index
 npm ci && npm run build
+npm test             # 20 checks: colouring and completion
 ```
 
-The tests run against stub classes copied from `nextcloud/server` at `stable34`,
-so they check this app's own logic and its assumptions about the server. They
-cannot tell you the app works on a real instance; only installing it can.
+Neither suite needs PHPUnit, Nextcloud, or a browser. The PHP tests run against
+stub classes copied from `nextcloud/server` at `stable34`, so they check this
+app's own logic and its assumptions about the server. They cannot tell you the
+app works on a real instance; only installing it can.
+
+Colouring and completion live in `src/highlight.js` as pure functions, away from
+the component, which is why they can be tested without a DOM.
+
+## Changes
+
+[CHANGELOG.md](CHANGELOG.md) records what each release changed.
 
 ## Licence
 

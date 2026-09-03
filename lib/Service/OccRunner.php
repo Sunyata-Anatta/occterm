@@ -69,29 +69,66 @@ class OccRunner {
 	}
 
 	/**
-	 * Names of every available occ command.
+	 * What the client needs to colour and complete a command line.
 	 *
 	 * Uses Symfony's own machine-readable listing rather than reaching into the
 	 * application object, so this needs no reflection.
 	 *
-	 * @return string[]
+	 * Each command reports its own options and its usage line. The usage line
+	 * doubles as the example shown to the user, so no separate help text is sent.
+	 * Options carried by every command are reported once under "global" rather
+	 * than repeated per command, which is most of the payload otherwise.
+	 *
+	 * @return array{commands: array<string, array{o: string[], u: string}>, global: string[]}
 	 */
-	public function listCommands(): array {
-		$json = $this->run('list --format=json');
-		$parsed = json_decode($json, true);
+	public function commandIndex(): array {
+		$parsed = json_decode($this->run('list --format=json'), true);
 		if (!is_array($parsed) || !isset($parsed['commands']) || !is_array($parsed['commands'])) {
-			return [];
+			return ['commands' => [], 'global' => []];
 		}
 
-		$names = [];
+		$options = [];
+		$usage = [];
 		foreach ($parsed['commands'] as $command) {
-			if (isset($command['name']) && is_string($command['name'])) {
-				$names[] = $command['name'];
+			$name = $command['name'] ?? null;
+			if (!is_string($name) || $name === '') {
+				continue;
 			}
-		}
-		sort($names);
 
-		return $names;
+			$names = [];
+			foreach ($command['definition']['options'] ?? [] as $option) {
+				if (isset($option['name']) && is_string($option['name'])) {
+					$names[] = $option['name'];
+				}
+			}
+			sort($names);
+			$options[$name] = $names;
+			$usage[$name] = (string)(($command['usage'] ?? [])[0] ?? $name);
+		}
+
+		if ($options === []) {
+			return ['commands' => [], 'global' => []];
+		}
+
+		// An option that every single command carries is a global one.
+		$sets = array_values($options);
+		$global = array_shift($sets);
+		foreach ($sets as $set) {
+			$global = array_intersect($global, $set);
+		}
+		$global = array_values($global);
+		sort($global);
+
+		$commands = [];
+		foreach ($options as $name => $names) {
+			$commands[$name] = [
+				'o' => array_values(array_diff($names, $global)),
+				'u' => $usage[$name],
+			];
+		}
+		ksort($commands);
+
+		return ['commands' => $commands, 'global' => $global];
 	}
 
 	private function buildApplication(): ConsoleApplication {

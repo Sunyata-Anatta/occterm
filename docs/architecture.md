@@ -42,8 +42,22 @@ Nextcloud and Symfony do not otherwise provide:
 
 ## Deliberate choices
 
-**No reflection.** Command names come from Symfony's own machine-readable
+**No reflection.** Command data comes from Symfony's own machine-readable
 listing, `list --format=json`, run through the same path as any other command.
+That listing carries each command's options and usage line as well as its name,
+which is where the colouring and completion in the browser get their facts.
+
+**A command index, not a name list.** `GET /api/v1/commands` answers with
+`{commands: {name: {o: [...], u: "usage"}}, global: [...]}`. Options that every
+command carries are reported once under `global` rather than repeated per
+command, because on a real instance those seven or so repeats are most of the
+payload. The usage line doubles as the example shown above the prompt, so no
+separate help text is sent.
+
+**Colouring and completion are pure functions.** They live in
+`src/highlight.js`, outside the Vue component, which is the only reason they can
+be tested without a browser or a DOM. The component holds the state; the module
+holds the rules.
 
 **No ANSI.** The output is created undecorated, so what reaches the browser is
 plain text. Colour would mean shipping an escape-sequence renderer to the client

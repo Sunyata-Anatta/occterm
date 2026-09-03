@@ -48,12 +48,12 @@ class CommandController extends OCSController {
 	}
 
 	/**
-	 * Names of every available occ command, for completion.
+	 * The command index the terminal uses to colour and complete input.
 	 *
-	 * @return DataResponse<Http::STATUS_OK, array{commands: string[]}, array{}>
+	 * @return DataResponse<Http::STATUS_OK, array{commands: array<string, array{o: string[], u: string}>, global: string[]}, array{}>
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/v1/commands')]
 	public function commands(): DataResponse {
-		return new DataResponse(['commands' => $this->runner->listCommands()]);
+		return new DataResponse($this->runner->commandIndex());
 	}
 }
