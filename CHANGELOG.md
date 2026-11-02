@@ -2,6 +2,71 @@
 
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.0
+
+### Changed
+
+- No `max-version` is declared any more, so a Nextcloud upgrade no longer
+  disables the app. `DependencyAnalyzer::analyzeServerVersion()` skips the
+  upper-bound check entirely when the attribute is absent.
+
+  A force-enable would not have done this. `Updater::doUpgrade()` deletes the
+  `app_install_overwrite` system value on every major upgrade, and
+  `checkAppsRequirements()` then disables the app with the default
+  `$ignoreMax = false`.
+
+### Fixed
+
+- A Nextcloud release that changes the console constructor used to produce an
+  uncaught `ArgumentCountError`. Building the console is now caught separately
+  from running a command, and reports the server version with a note that the
+  app needs updating. The front end shows that message instead of a generic
+  line about completion being unavailable.
+
+  This is the other half of dropping `max-version`: giving up the guard rail is
+  only reasonable if the fall is survivable.
+
+### Added
+
+- `tools/occterm-update.sh` installs the newest release and does nothing when
+  the installed version already matches. It verifies the archive before
+  deleting anything, keeps a backup, restores it if the install fails, and
+  reads `occ app:list --output=json` so a disabled app is not mistaken for a
+  successful install.
+- `tools/occterm-update.test.sh`, which covers the archive checks. The first
+  version of those checks rejected every valid archive, because `tar | grep -q`
+  under `set -o pipefail` reports the pipeline as failed when grep exits early
+  and tar takes a SIGPIPE.
+
+## 1.2.0
+
+### Added
+
+- Nextcloud 35 support. The version range is now `34` to `35`.
+
+### Notes
+
+An app whose `max-version` is behind the server is disabled on upgrade, so 1.1.1
+disappeared from the navigation on a Nextcloud 35 instance with its files
+untouched. Nothing in the app was broken; the range was.
+
+Checking that the range could honestly be widened meant reading what Nextcloud 35
+changed underneath:
+
+- `OC\Console\Application::__construct` is unchanged from 34, still eight
+  arguments.
+- `OCP\IRequest` still declares the same 23 methods, so `ConsoleRequest` needs
+  no new ones. A single added method would have made that class abstract and
+  fatal at load.
+- The server moved from Symfony Console 6.4 to 7.4, which types
+  `ConsoleOutputInterface::setErrorOutput()` as `void`. `BufferedConsoleOutput`
+  already declared that type for this reason. The suite now runs against both
+  majors.
+- Nextcloud 35 removed the `oc_webroot`, `oc_requesttoken`, `oc_config` and
+  similar front-end aliases. The bundled `@nextcloud` packages read
+  `_oc_webroot`, `_nc_auth_requestToken` and `_oc_config`, which are different
+  names and still present.
+
 ## 1.1.1
 
 ### Fixed

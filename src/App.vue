@@ -171,7 +171,13 @@ export default {
 				global: data?.ocs?.data?.global ?? [],
 			}
 		} catch (error) {
-			this.write('Could not load the command list. Completion and colouring are off.')
+			// The server says why when it can. On a Nextcloud release that moved
+			// the console out from under this app, that sentence is the whole
+			// diagnosis, so it has to reach the screen rather than be swallowed.
+			const message = error?.response?.data?.ocs?.data?.message
+			this.write(message
+				? 'error: ' + message
+				: 'Could not load the command list. Completion and colouring are off.')
 			this.write('')
 		}
 	},

@@ -14,7 +14,7 @@ constructor this app depends on has already changed inside that window:
 | Nextcloud | `OC\Console\Application::__construct` |
 |---|---|
 | 29 | `IConfig, IEventDispatcher, IRequest, LoggerInterface, MemoryInfo` |
-| 31, 32, 34 | `ServerVersion, IConfig, IEventDispatcher, IRequest, LoggerInterface, MemoryInfo, IAppManager, Defaults` |
+| 31, 32, 34, 35 | `ServerVersion, IConfig, IEventDispatcher, IRequest, LoggerInterface, MemoryInfo, IAppManager, Defaults` |
 
 So this app cannot be made future-proof, and no amount of rewriting changes
 that. What it can do is fail in one predictable place instead of several.
@@ -39,6 +39,12 @@ Nextcloud and Symfony do not otherwise provide:
   `ConsoleOutputInterface`, which `loadCommands()` requires and which Symfony's
   own `BufferedOutput` does not provide. Error output folds into the same buffer
   so a client reads one transcript.
+
+  Its `setErrorOutput()` declares `: void` even though Symfony Console 6.4 leaves
+  that method untyped, because Symfony 7 adds the type and a class that omits it
+  would then be incompatible. Nextcloud 34 shipped Console 6.4 and Nextcloud 35
+  ships 7.4, so both are real: the suite is run against each (6.4.48 and 7.4.21
+  as of 2026-10-18) rather than against whichever happens to be installed.
 
 ## Deliberate choices
 
@@ -65,6 +71,20 @@ for little gain in an administrative tool.
 
 **One `Application` per command.** Building it per run costs a little time and
 removes any question of state leaking between requests.
+
+**No declared `max-version`.** `DependencyAnalyzer::analyzeServerVersion()` skips
+the upper-bound comparison when the attribute is absent, so the app is never
+auto-disabled by an upgrade. A force-enable is not an alternative: `Updater::
+doUpgrade()` deletes the `app_install_overwrite` system value on every major
+upgrade, and `checkAppsRequirements()` then calls `isAppCompatible()` with the
+default `$ignoreMax = false`.
+
+**Starting the console is caught apart from running a command.** Building
+`OC\Console\Application` is the single step that touches the private namespace,
+so it is the single step a release can break. `OccRunner::run()` wraps it in its
+own `try`, and reports a changed console as a sentence naming the server version
+rather than as an uncaught `ArgumentCountError`. That report is what makes
+shipping without a `max-version` defensible.
 
 **Administrator only.** No controller method carries `NoAdminRequired`, so the
 security middleware rejects everyone else before any code here runs. This is the

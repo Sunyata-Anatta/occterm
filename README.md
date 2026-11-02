@@ -36,7 +36,7 @@ Commands that can lock you out of the interface you are typing into, such as
 
 ## Requirements
 
-- Nextcloud 34 (`info.xml` is pinned to `min-version="34" max-version="34"`)
+- Nextcloud 34 or later (`info.xml` declares `min-version="34"` and no upper bound; see *Will it survive the next Nextcloud release?*)
 - PHP 8.1 or newer
 
 ## Install
@@ -49,7 +49,7 @@ expects. Extract it directly into your apps directory, then enable it.
 ```bash
 cd /path/to/nextcloud/apps
 curl -L -o occterm.tar.gz \
-  https://github.com/Sunyata-Anatta/occterm/releases/download/v1.1.1/occterm-1.1.1.tar.gz
+  https://github.com/Sunyata-Anatta/occterm/releases/download/v1.3.0/occterm-1.3.0.tar.gz
 tar xzf occterm.tar.gz && rm occterm.tar.gz
 
 sudo -u www-data php /path/to/nextcloud/occ app:enable occterm
@@ -89,6 +89,37 @@ sudo -u www-data php /path/to/nextcloud/occ app:list | grep occterm
 Then open **OCCTerm** in the administrator navigation and run `status`. If the
 page loads but stays empty, the frontend bundle is missing: check that
 `js/occterm-main.js` exists, and run `npm ci && npm run build` if it does not.
+
+### Updating
+
+`tools/occterm-update.sh` installs the newest release and does nothing when the
+installed version already matches, so it is safe to run on a timer. Put it
+somewhere outside the app directory, because it replaces that directory whole:
+
+```bash
+sudo install -m 755 occterm/tools/occterm-update.sh /usr/local/sbin/occterm-update
+```
+
+Settings come from the environment or from `/etc/occterm-update.conf`:
+
+```bash
+# /etc/occterm-update.conf   (chmod 600 if it holds a token)
+NEXTCLOUD_PATH=/var/www/nextcloud
+WEB_USER=www-data
+REPO=Sunyata-Anatta/occterm
+GITHUB_TOKEN=            # only for a private repository, read access is enough
+```
+
+```bash
+occterm-update --dry-run   # say what it would do
+occterm-update             # do it
+```
+
+It refuses an archive that is not this app before deleting anything, keeps a
+copy of the old version under `/var/tmp/occterm-backups`, and puts that copy
+back if the install fails. It reads `occ app:list --output=json` afterwards, so
+an app that installs but will not enable is reported as a failure rather than a
+success.
 
 ### Uninstall
 
@@ -133,16 +164,35 @@ explains why this is unlikely to change.
 
 ## Will it survive the next Nextcloud release?
 
-Probably not without a change, and that is a property of Nextcloud rather than of
-this code. There is no public API for running console commands, so the one thing
-this app exists to do can only be done through the server's private namespace,
-which carries no compatibility guarantee. The constructor it depends on already
+Not on its own, and that is a property of Nextcloud rather than of this code.
+There is no public API for running console commands, so the one thing this app
+exists to do can only be done through the server's private namespace, which
+carries no compatibility guarantee. The constructor it depends on already
 changed between Nextcloud 29 and 31.
 
 The design response is containment, not a fix: every private dependency lives in
 `lib/Service/OccRunner.php`, so a server-side change breaks one file whose
 expected signature is recorded in `tests/stubs/nextcloud.php`.
 [docs/architecture.md](docs/architecture.md) has the details.
+
+Nextcloud 35 was the first test of that. The private constructor turned out
+unchanged, but the server moved from Symfony Console 6 to 7, which adds a return
+type to a method this app implements. Nothing had to be rewritten, and the whole
+check was reading two upstream files and running the suite against both Symfony
+majors. Expect that much work at every major release, and expect it to be more
+than that eventually.
+
+What broke on that upgrade was not the code but the version range. Nextcloud
+disables an app whose `max-version` is behind the server, so 1.1.1 vanished from
+the navigation with its files untouched.
+
+This app therefore declares no `max-version` at all. Nextcloud skips the upper
+bound entirely when the attribute is absent, so an upgrade no longer disables it.
+That trades a guard rail for a louder failure, which is only reasonable because
+the failure is survivable: starting the console is caught separately from running
+a command, so a release that moves the console out from under this app produces a
+sentence naming the server version and saying the app needs updating. Disappearing
+without a word was the worse of the two behaviours.
 
 ## Development
 
@@ -151,15 +201,22 @@ composer install     # dev-only, for the tests
 composer test        # 9 checks: the runner and the command index
 npm ci && npm run build
 npm test             # 20 checks: colouring and completion
+bash tools/occterm-update.test.sh <path to a release tar.gz>   # 7 checks
 ```
 
 Neither suite needs PHPUnit, Nextcloud, or a browser. The PHP tests run against
-stub classes copied from `nextcloud/server` at `stable34`, so they check this
+stub classes copied from `nextcloud/server`, checked against `stable34` and
+`stable35`, so they check this
 app's own logic and its assumptions about the server. They cannot tell you the
 app works on a real instance; only installing it can.
 
 Colouring and completion live in `src/highlight.js` as pure functions, away from
 the component, which is why they can be tested without a DOM.
+
+The third suite covers the part of the update script that decides whether to
+delete a directory. It exists because the first version of that check rejected
+every valid archive: `tar | grep -q` plus `set -o pipefail` reports the pipeline
+as failed when grep exits early and tar takes a SIGPIPE.
 
 ## Changes
 

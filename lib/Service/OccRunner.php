@@ -55,7 +55,25 @@ class OccRunner {
 		}
 
 		$output = new BufferedConsoleOutput(OutputInterface::VERBOSITY_NORMAL, false);
-		$application = $this->buildApplication();
+
+		// Building the console is the one step that touches the server's private
+		// namespace, so it is the one step a Nextcloud release can break. Catching
+		// it separately is what turns that into a sentence the admin can act on
+		// instead of a stack trace that reads like a bug in this app.
+		try {
+			$application = $this->buildApplication();
+		} catch (Throwable $e) {
+			$this->logger->error('OCCTerm cannot start the Nextcloud console: ' . $e->getMessage(), ['exception' => $e]);
+
+			throw new OccException(sprintf(
+				'OCCTerm cannot start the Nextcloud console on server version %s. '
+				. 'Nextcloud publishes no API for running occ, so this app depends on '
+				. 'server internals that a release is free to change, and this looks '
+				. 'like one of those changes. The app needs updating. Original error: %s',
+				$this->serverVersion->getVersionString(),
+				$e->getMessage(),
+			), 0, $e);
+		}
 
 		try {
 			$application->loadCommands(new StringInput(''), $output);
@@ -131,7 +149,8 @@ class OccRunner {
 		return ['commands' => $commands, 'global' => $global];
 	}
 
-	private function buildApplication(): ConsoleApplication {
+	/** Overridden in tests to stand in for a server whose console has changed. */
+	protected function buildApplication(): ConsoleApplication {
 		$application = new ConsoleApplication(
 			$this->serverVersion,
 			$this->config,

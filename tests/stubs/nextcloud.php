@@ -10,8 +10,12 @@ declare(strict_types=1);
  *
  * Stand-ins for the Nextcloud API surface OCCTerm touches, so the unit tests
  * run without a Nextcloud installation. Signatures are copied from
- * nextcloud/server @ stable34; if a signature here stops matching the server,
- * the tests are lying and must be regenerated. Checked 2026-09-02.
+ * nextcloud/server; if a signature here stops matching the server, the tests
+ * are lying and must be regenerated.
+ *
+ * Checked against stable34 on 2026-09-02 and stable35 on 2026-10-18. Both
+ * carry the same OC\Console\Application constructor and the same 23 methods
+ * on OCP\IRequest, which is why one set of stubs covers both.
  */
 
 namespace OCP {

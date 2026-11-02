@@ -21,6 +21,7 @@ require __DIR__ . '/../lib/Service/OccRunner.php';
 
 use OCA\OCCTerm\Console\BufferedConsoleOutput;
 use OCA\OCCTerm\Console\ConsoleRequest;
+use OCA\OCCTerm\Service\OccException;
 use OCA\OCCTerm\Service\OccRunner;
 use OCP\App\IAppManager;
 use OCP\Defaults;
@@ -53,8 +54,9 @@ function that(bool $condition, string $message): void {
 	}
 }
 
-function makeRunner(): OccRunner {
-	return new OccRunner(
+/** @return array<int, mixed> the collaborators OccRunner takes, in order */
+function runnerArgs(): array {
+	return [
 		new ServerVersion(),
 		new class implements IConfig {
 			public function getSystemValueBool(string $key, bool $default = false): bool {
@@ -73,7 +75,11 @@ function makeRunner(): OccRunner {
 			}
 		},
 		new Defaults(),
-	);
+	];
+}
+
+function makeRunner(): OccRunner {
+	return new OccRunner(...runnerArgs());
 }
 
 check('BufferedConsoleOutput satisfies Symfony ConsoleOutputInterface', function (): void {
@@ -142,6 +148,47 @@ check('commandIndex() survives output that is not JSON', function (): void {
 		}
 	};
 	that($runner->commandIndex() === ['commands' => [], 'global' => []], 'malformed output should yield an empty index, not a crash');
+});
+
+check('a console the server has changed reports itself instead of fatalling', function (): void {
+	$runner = new class (...runnerArgs()) extends OccRunner {
+		protected function buildApplication(): \OC\Console\Application {
+			// What Nextcloud actually throws when it adds a constructor argument.
+			throw new ArgumentCountError(
+				'Too few arguments to function OC\\Console\\Application::__construct(), '
+				. '8 passed and at least 9 expected'
+			);
+		}
+	};
+
+	try {
+		$runner->run('status');
+	} catch (OccException $e) {
+		that(str_contains($e->getMessage(), '34.0.0'), 'the message should name the server version: ' . $e->getMessage());
+		that(str_contains($e->getMessage(), 'needs updating'), 'the message should say what to do: ' . $e->getMessage());
+		that(str_contains($e->getMessage(), 'at least 9 expected'), 'the original error should survive: ' . $e->getMessage());
+		that($e->getPrevious() instanceof ArgumentCountError, 'the cause should be kept for the log');
+		return;
+	}
+
+	that(false, 'a broken console should raise OccException, not return');
+});
+
+check('the command index survives a changed console the same way', function (): void {
+	$runner = new class (...runnerArgs()) extends OccRunner {
+		protected function buildApplication(): \OC\Console\Application {
+			throw new TypeError('Argument #2 ($config) must be of type OCP\\IAppConfig');
+		}
+	};
+
+	try {
+		$runner->commandIndex();
+	} catch (OccException $e) {
+		that(str_contains($e->getMessage(), 'cannot start the Nextcloud console'), $e->getMessage());
+		return;
+	}
+
+	that(false, 'commandIndex() should surface the same failure');
 });
 
 echo "\n$passed passed, $failed failed\n";
